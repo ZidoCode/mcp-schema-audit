@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-schema-audit"
+version = "0.1.0"
+description = "Audit recorded MCP listings for wire shapes that make clients silently reject tools. Zero dependencies."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.8"
+authors = [{ name = "ZidoCode" }]
+keywords = ["mcp", "model-context-protocol", "audit", "schema", "jsonrpc", "llm", "agent"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Quality Assurance",
+]
+
+[project.scripts]
+mcp-schema-audit = "mcp_schema_audit:main"
+
+[tool.hatch.build.targets.wheel]
+only-include = ["mcp_schema_audit.py"]
+sources = ["."]
