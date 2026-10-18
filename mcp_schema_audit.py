@@ -152,6 +152,10 @@ def audit(lines):
         if isinstance(tools, list):
             tool_lists += 1
             total_tools += len(tools)
+            # Duplicates only mean something inside one listing. A session that
+            # lists tools twice (reconnect, server restart, pagination) repeats
+            # the same names and used to be reported as CRITICAL.
+            listing_names = {}
             if not tools:
                 findings.append((WARNING, "empty-tools",
                                  f"line {n}: tools/list returned zero tools — server "
@@ -164,11 +168,12 @@ def audit(lines):
                     findings.append((CRITICAL, "tool-unnamed",
                                      f"line {n}: tool without a name — uncallable"))
                     continue
-                if name in names:
+                if name in listing_names:
                     findings.append((CRITICAL, "duplicate-tool",
                                      f"line {n}: duplicate tool name '{name}' (first seen "
-                                     f"line {names[name]}) — only one can be called"))
-                names[name] = n
+                                     f"line {listing_names[name]}) — only one can be called"))
+                listing_names[name] = n
+                names.setdefault(name, n)
                 _schema_findings(f"tool '{name}' (line {n})", t.get("inputSchema"),
                                  findings)
 
@@ -215,7 +220,12 @@ def main(argv=None):
     if not argv or argv[0] in ("-h", "--help"):
         print(__doc__)
         return 0
-    return report(argv[0], audit(load_lines(argv[0])))
+    try:
+        lines = load_lines(argv[0])
+    except OSError as exc:
+        print(f"mcp-schema-audit: cannot read {argv[0]}: {exc}", file=sys.stderr)
+        return 2
+    return report(argv[0], audit(lines))
 
 
 if __name__ == "__main__":

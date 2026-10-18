@@ -119,5 +119,29 @@ class TestInitialize(unittest.TestCase):
                                         capture_output=True).returncode, 2)
 
 
+class TestRelist(unittest.TestCase):
+    """The same tools listed twice is normal; duplicates inside one listing are not."""
+
+    TOOL = {"name": "read", "description": "d", "inputSchema": {"type": "object"}}
+
+    def _audit(self, listings):
+        lines = [jl(INIT_OK)]
+        rid = 2
+        for tools in listings:
+            lines.append(jl({"direction": "response", "id": rid, "result": {"tools": tools}}))
+            rid += 1
+        return msa.audit(lines)
+
+    def test_relisting_same_tools_is_not_critical(self):
+        findings = self._audit([[self.TOOL], [self.TOOL]])
+        kinds = [k for sev, k, _m in findings if sev == msa.CRITICAL]
+        self.assertEqual(kinds, [])
+
+    def test_duplicate_inside_one_listing_is_critical(self):
+        findings = self._audit([[self.TOOL, dict(self.TOOL, description="other")]])
+        kinds = [k for sev, k, _m in findings if sev == msa.CRITICAL]
+        self.assertIn("duplicate-tool", kinds)
+
+
 if __name__ == "__main__":
     unittest.main()
